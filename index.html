@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AetherFlow | Productivity OS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #020617; }
+        .glass { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
+        .premium-gradient { background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%); }
+    </style>
+</head>
+<body class="text-slate-200 min-h-screen">
+
+    <!-- ELITE TOP BANNER -->
+    <div class="fixed top-0 w-full z-50 bg-indigo-600 text-white py-1.5 text-[10px] font-bold tracking-[0.2em] uppercase text-center shadow-2xl">
+        AetherFlow v1.0 • 100% Free Forever • Global Access
+    </div>
+
+    <div id="app" class="max-w-md mx-auto px-6 pt-16 pb-32">
+        <!-- HEADER -->
+        <div class="flex justify-between items-center mb-10">
+            <div>
+                <h1 class="text-sm font-bold text-indigo-400 tracking-widest uppercase">Command Center</h1>
+                <h2 id="welcome-note" class="text-2xl font-extrabold text-white">Good morning, Umair</h2>
+            </div>
+            <div class="glass px-4 py-2 rounded-2xl flex items-center gap-2 border-indigo-500/30">
+                <i data-lucide="zap" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i>
+                <span id="score-display" class="font-black text-xl italic">85</span>
+            </div>
+        </div>
+
+        <!-- COMPETITION: FRIENDS LEADERBOARD -->
+        <section class="mb-10">
+            <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-4">Live Streaks with Friends</h3>
+            <div class="space-y-3">
+                <div class="glass p-3 rounded-2xl flex items-center justify-between border-l-4 border-l-indigo-500">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-xs font-bold">U</div>
+                        <span class="text-sm font-semibold text-white">You (Umair)</span>
+                    </div>
+                    <span class="text-xs font-bold text-indigo-400">12 Day Streak 🔥</span>
+                </div>
+                <div class="glass p-3 rounded-2xl flex items-center justify-between opacity-60">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-xs font-bold">B</div>
+                        <span class="text-sm font-semibold">Elder Brother</span>
+                    </div>
+                    <span class="text-xs font-bold text-slate-400">8 Day Streak 🔥</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- TASKS SECTION -->
+        <section class="mb-10">
+             <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-4 flex justify-between">
+                <span>Active Missions</span>
+                <span class="text-indigo-500 cursor-pointer">+ New Task</span>
+             </h3>
+             <div id="task-list" class="space-y-3">
+                <!-- Tasks will be injected here -->
+             </div>
+        </section>
+
+        <!-- NIGHTLY INSIGHT TRIGGER -->
+        <div class="premium-gradient p-6 rounded-[2.5rem] shadow-2xl shadow-indigo-500/20 text-center cursor-pointer transform transition hover:scale-[1.02]" onclick="toggleInsight()">
+            <i data-lucide="trending-up" class="w-8 h-8 mx-auto mb-2 text-white"></i>
+            <h4 class="font-bold text-white">View Performance Insight</h4>
+            <p class="text-indigo-100 text-[10px] uppercase tracking-widest font-semibold mt-1">Analyze your daily growth</p>
+        </div>
+    </div>
+
+    <!-- MODAL: NIGHTLY INSIGHT -->
+    <div id="insight-modal" class="hidden fixed inset-0 z-[100] glass flex items-center justify-center p-6">
+        <div class="bg-slate-900 border border-white/10 w-full max-w-sm rounded-[3rem] p-10 text-center relative shadow-2xl">
+            <i data-lucide="trophy" class="w-16 h-16 text-yellow-400 mx-auto mb-4"></i>
+            <h2 class="text-2xl font-black mb-2 text-white">Daily Recap</h2>
+            <p class="text-slate-400 text-sm mb-8 leading-relaxed">"One small step today, a giant leap for the Khalid Empire."</p>
+            
+            <div class="grid grid-cols-2 gap-4 mb-8">
+                <div class="bg-slate-800/50 p-4 rounded-3xl">
+                    <div class="text-2xl font-black text-white">85%</div>
+                    <div class="text-[8px] uppercase tracking-widest font-bold text-slate-500">Efficiency</div>
+                </div>
+                <div class="bg-slate-800/50 p-4 rounded-3xl">
+                    <div class="text-2xl font-black text-indigo-400">#1</div>
+                    <div class="text-[8px] uppercase tracking-widest font-bold text-slate-500">Global Rank</div>
+                </div>
+            </div>
+
+            <button onclick="toggleInsight()" class="w-full py-4 rounded-2xl bg-white text-black font-bold text-sm">Close Report</button>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Icons
+        lucide.createIcons();
+
+        // Simple State
+        let score = 85;
+        const tasks = [
+            { text: "Finish Harvard Research", done: false },
+            { text: "Edit B-Roll for LinkedIn", done: true },
+            { text: "Update GitHub Repo", done: false }
+        ];
+
+        function renderTasks() {
+            const container = document.getElementById('task-list');
+            container.innerHTML = tasks.map((t, i) => `
+                <div class="glass p-4 rounded-2xl flex items-center justify-between group">
+                    <span class="text-sm ${t.done ? 'line-through text-slate-500' : 'text-slate-200'} font-medium">${t.text}</span>
+                    <button class="w-6 h-6 rounded-lg border-2 ${t.done ? 'bg-indigo-500 border-indigo-500' : 'border-slate-700'} flex items-center justify-center transition-all">
+                        ${t.done ? '<i data-lucide="check" class="w-4 h-4 text-white"></i>' : ''}
+                    </button>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function toggleInsight() {
+            const modal = document.getElementById('insight-modal');
+            modal.classList.toggle('hidden');
+        }
+
+        renderTasks();
+    </script>
+</body>
+</html>
