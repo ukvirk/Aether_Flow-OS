@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AetherFlow | Productivity OS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="importmap">
+    {
+        "imports": {
+            "react": "https://esm.sh/react@18",
+            "react-dom": "https://esm.sh/react-dom@18",
+            "react-dom/client": "https://esm.sh/react-dom@18/client",
+            "lucide-react": "https://esm.sh/lucide-react@0.284.0"
+        }
+    }
+    </script>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="module">
+        import React, { useState, useEffect, useReducer } from 'react';
+        import { createRoot } from 'react-dom/client';
+        import { 
+            Clock, Plus, Trash2, Check, Moon, Sun, Target, Calendar, Flame, Trophy, 
+            PlayCircle, PauseCircle, RefreshCw, Zap, Settings, Heart, BarChart3, 
+            BookOpen, Save, Users, Copy, Sparkles, X, CheckSquare, CheckCircle, CheckCircle2,
+            CloudRain, Coffee, Wind, Volume2
+        } from 'lucide-react';
+
+        // --- START OF YOUR GENERATED LOGIC ---
+        // I have integrated your taskReducer and habitReducer logic here [cite: 123, 126]
+        
+        const taskReducer = (state, action) => {
+          switch (action.type) {
+            case 'SET_TASKS': return action.payload;
+            case 'ADD_TASK': return [...state, action.payload];
+            case 'TOGGLE_TASK': return state.map(t => t.id === action.payload ? { ...t, completed: !t.completed } : t);
+            case 'DELETE_TASK': return state.filter(t => t.id !== action.payload);
+            default: return state;
+          }
+        };
+
+        const habitReducer = (state, action) => {
+          switch (action.type) {
+            case 'SET_HABITS': return action.payload;
+            case 'ADD_HABIT': return [...state, action.payload];
+            case 'TOGGLE_HABIT': return state.map(h => h.id === action.payload ? { ...h, completedToday: !h.completedToday, totalCompletions: h.completedToday ? h.totalCompletions - 1 : h.totalCompletions + 1 } : h);
+            case 'DELETE_HABIT': return state.filter(h => h.id !== action.payload);
+            default: return state;
+          }
+        };
+
+        // --- REPLACEMENT FOR REACT COMPONENTS ---
+        // To make this work in one file, I am combining your modules into the main App component
+        
+        const AetherFlowApp = () => {
+            // All state variables from your code [cite: 160-166]
+            const [userId] = useState(crypto.randomUUID());
+            const [isDarkMode, setIsDarkMode] = useState(true);
+            const [tasks, dispatchTasks] = useReducer(taskReducer, []);
+            const [habits, dispatchHabits] = useReducer(habitReducer, []);
+            const [userProfile, setUserProfile] = useState({ streak: 7, totalPoints: 245, name: 'Warrior' });
+            const [activeTab, setActiveTab] = useState('dashboard');
+            const [newTask, setNewTask] = useState('');
+            const [newTaskTime, setNewTaskTime] = useState('');
+            const [newTaskPriority, setNewTaskPriority] = useState('medium');
+            const [newHabitName, setNewHabitName] = useState('');
+            const [newHabitIcon, setNewHabitIcon] = useState('✨');
+            const [pomodoroMinutes, setPomodoroMinutes] = useState(25);
+            const [pomodoroSeconds, setPomodoroSeconds] = useState(0);
+            const [pomodoroActive, setPomodoroActive] = useState(false);
+            const [pomodoroType, setPomodoroType] = useState('work');
+            const [pomodoroCount, setPomodoroCount] = useState(0);
+            const [userName, setUserName] = useState('Warrior');
+            const [showFriendsModal, setShowFriendsModal] = useState(false);
+
+            // Logic for Pomodoro Timer 
+            useEffect(() => {
+                let interval = null;
+                if (pomodoroActive) {
+                    interval = setInterval(() => {
+                        if (pomodoroSeconds === 0) {
+                            if (pomodoroMinutes === 0) {
+                                setPomodoroActive(false);
+                                if (pomodoroType === 'work') {
+                                    setPomodoroCount(prev => prev + 1);
+                                    setUserProfile(prev => ({ ...prev, totalPoints: prev.totalPoints + 10 }));
+                                    setPomodoroType('short-break');
+                                    setPomodoroMinutes(5);
+                                } else {
+                                    setPomodoroType('work');
+                                    setPomodoroMinutes(25);
+                                }
+                            } else {
+                                setPomodoroMinutes(prev => prev - 1);
+                                setPomodoroSeconds(59);
+                            }
+                        } else {
+                            setPomodoroSeconds(prev => prev - 1);
+                        }
+                    }, 1000);
+                }
+                return () => clearInterval(interval);
+            }, [pomodoroActive, pomodoroMinutes, pomodoroSeconds, pomodoroType]);
+
+            // Task Actions [cite: 178, 183]
+            const addTask = (e) => {
+                e.preventDefault();
+                if (!newTask.trim()) return;
+                dispatchTasks({ type: 'ADD_TASK', payload: {
+                    id: Date.now(),
+                    text: newTask,
+                    priority: newTaskPriority,
+                    completed: false,
+                    time: newTaskTime
+                }});
+                setNewTask('');
+            };
+
+            // Rendering your Dashboard [cite: 186]
+            return (
+                <div className={`min-h-screen ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}>
+                    <header className="p-4 border-b flex justify-between items-center">
+                        <div className="flex items-center gap-2">
+                            <Zap className="text-indigo-500" />
+                            <h1 className="font-bold">AetherFlow</h1>
+                        </div>
+                        <div className="flex gap-4 text-xs font-bold">
+                            <span className="text-yellow-400">🏆 {userProfile.totalPoints}</span>
+                            <span className="text-red-400">🔥 {userProfile.streak}d</span>
+                        </div>
+                    </header>
+
+                    <main className="p-4 pb-24">
+                        {activeTab === 'dashboard' && (
+                            <div className="grid grid-cols-2 gap-4 mt-4">
+                                <div className="bg-indigo-600 p-4 rounded-xl text-center">
+                                    <CheckSquare className="mx-auto mb-2" />
+                                    <div className="text-2xl font-bold">{tasks.filter(t => t.completed).length}</div>
+                                    <div className="text-xs opacity-80">Tasks Done</div>
+                                </div>
+                                <div className="bg-red-600 p-4 rounded-xl text-center">
+                                    <Flame className="mx-auto mb-2" />
+                                    <div className="text-2xl font-bold">{userProfile.streak}d</div>
+                                    <div className="text-xs opacity-80">Streak</div>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'focus' && (
+                            <div className="text-center py-10">
+                                <div className="text-6xl font-mono mb-8">
+                                    {String(pomodoroMinutes).padStart(2, '0')}:{String(pomodoroSeconds).padStart(2, '0')}
+                                </div>
+                                <button 
+                                    onClick={() => setPomodoroActive(!pomodoroActive)}
+                                    className="bg-red-600 px-8 py-3 rounded-full font-bold"
+                                >
+                                    {pomodoroActive ? 'PAUSE' : 'START FOCUS'}
+                                </button>
+                            </div>
+                        )}
+                        
+                        {activeTab === 'tasks' && (
+                            <form onSubmit={addTask} className="space-y-4">
+                                <input 
+                                    value={newTask} 
+                                    onChange={(e) => setNewTask(e.target.value)}
+                                    placeholder="What's the goal?" 
+                                    className="w-full bg-gray-800 p-3 rounded-lg border border-gray-700"
+                                />
+                                <button type="submit" className="w-full bg-blue-600 p-3 rounded-lg font-bold">+ Add Task</button>
+                                <div className="mt-6">
+                                    {tasks.map(t => (
+                                        <div key={t.id} className="bg-gray-800 p-3 rounded-lg mb-2 flex justify-between">
+                                            <span>{t.text}</span>
+                                            <button onClick={() => dispatchTasks({type:'DELETE_TASK', payload: t.id})}><Trash2 size={16} className="text-red-400"/></button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </form>
+                        )}
+                    </main>
+
+                    <nav className="fixed bottom-0 left-0 right-0 bg-gray-800 border-t p-4 flex justify-around">
+                        <button onClick={() => setActiveTab('dashboard')} className={activeTab === 'dashboard' ? 'text-indigo-400' : ''}><Calendar /></button>
+                        <button onClick={() => setActiveTab('tasks')} className={activeTab === 'tasks' ? 'text-indigo-400' : ''}><Target /></button>
+                        <button onClick={() => setActiveTab('focus')} className={activeTab === 'focus' ? 'text-indigo-400' : ''}><Clock /></button>
+                        <button onClick={() => setActiveTab('settings')} className={activeTab === 'settings' ? 'text-indigo-400' : ''}><Settings /></button>
+                    </nav>
+                </div>
+            );
+        };
+
+        const root = createRoot(document.getElementById('root'));
+        root.render(React.createElement(AetherFlowApp));
+    </script>
+</body>
+</html>
