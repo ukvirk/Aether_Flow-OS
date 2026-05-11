@@ -3,18 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AetherFlow OS | Production v1.0</title>
+    <title>AetherFlow OS v1.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
-        body { font-family: 'Inter', sans-serif; background: #000; }
+        body { font-family: 'Inter', sans-serif; transition: all 0.3s ease; }
         .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
-        .active-tab { color: #6366f1; position: relative; }
-        .active-tab::after { content: ''; position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%); width: 4px; height: 4px; background: #6366f1; border-radius: 50%; }
+        .tab-active { color: #6366f1; border-bottom: 2px solid #6366f1; }
     </style>
 </head>
 <body>
@@ -24,7 +22,7 @@
         const { useState, useEffect, useReducer, useMemo } = React;
         const { createRoot } = ReactDOM;
 
-        // --- CORE REDUCERS (The Brain) ---
+        // --- CORE LOGIC: TASK & HABIT ENGINES ---
         const taskReducer = (state, action) => {
             switch (action.type) {
                 case 'ADD': return [...state, { ...action.payload, id: Date.now(), completed: false }];
@@ -34,154 +32,143 @@
             }
         };
 
-        const habitReducer = (state, action) => {
-            switch (action.type) {
-                case 'TOGGLE': return state.map(h => h.id === action.id ? { ...h, completedToday: !h.completedToday, streak: h.completedToday ? h.streak - 1 : h.streak + 1 } : h);
-                default: return state;
-            }
-        };
-
-        const App = () => {
+        const AetherFlow = () => {
             const [activeTab, setActiveTab] = useState('dashboard');
             const [isDarkMode, setIsDarkMode] = useState(true);
             const [tasks, dispatchTasks] = useReducer(taskReducer, []);
-            const [habits, dispatchHabits] = useReducer(habitReducer, [
-                { id: 1, name: 'Deep Work', icon: '🧠', streak: 12, completedToday: false },
-                { id: 2, name: 'Meditation', icon: '🧘', streak: 5, completedToday: false }
-            ]);
+            const [pomodoro, setPomodoro] = useState({ mins: 25, secs: 0, active: false });
+            const [referralCode] = useState(() => `AF-${Math.random().toString(36).substring(2, 9).toUpperCase()}`);
 
-            // Timer State
-            const [time, setTime] = useState(25 * 60);
-            const [isActive, setIsActive] = useState(false);
-
+            // Logic: Timer Engine
             useEffect(() => {
-                let interval = null;
-                if (isActive && time > 0) {
-                    interval = setInterval(() => setTime(t => t - 1), 1000);
-                } else if (time === 0) {
-                    setIsActive(false);
-                    new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg').play();
+                let timer;
+                if (pomodoro.active) {
+                    timer = setInterval(() => {
+                        if (pomodoro.secs === 0) {
+                            if (pomodoro.mins === 0) {
+                                clearInterval(timer);
+                                setPomodoro({ ...pomodoro, active: false });
+                                alert("Focus Session Complete!");
+                            } else {
+                                setPomodoro(p => ({ ...p, mins: p.mins - 1, secs: 59 }));
+                            }
+                        } else {
+                            setPomodoro(p => ({ ...p, secs: p.secs - 1 }));
+                        }
+                    }, 1000);
                 }
-                return () => clearInterval(interval);
-            }, [isActive, time]);
+                return () => clearInterval(timer);
+            }, [pomodoro.active, pomodoro.mins, pomodoro.secs]);
 
-            const formatTime = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
-
-            // Helper to render Lucide Icons in UMD
-            const Icon = ({ name, size = 20, className = "" }) => {
-                useEffect(() => { lucide.createIcons(); }, [activeTab]);
-                return <i data-lucide={name} style={{ width: size, height: size }} className={className}></i>;
-            };
+            // UI Component: Navigation
+            const NavItem = ({ id, label, icon }) => (
+                <button 
+                    onClick={() => setActiveTab(id)}
+                    className={`flex flex-col items-center p-2 text-xs font-bold transition-all ${activeTab === id ? 'text-indigo-500 scale-110' : 'text-gray-500'}`}
+                >
+                    <span className="text-xl mb-1">{icon}</span>
+                    {label}
+                </button>
+            );
 
             return (
-                <div className={`min-h-screen max-w-md mx-auto flex flex-col shadow-2xl ${isDarkMode ? 'bg-gray-950 text-white' : 'bg-gray-50 text-black'}`}>
-                    
+                <div className={`min-h-screen flex flex-col ${isDarkMode ? 'bg-gray-950 text-white' : 'bg-slate-50 text-slate-900'}`}>
                     {/* Header */}
-                    <header className="p-6 flex justify-between items-center">
+                    <header className="p-6 flex justify-between items-center border-b border-white/10">
                         <div>
-                            <h1 className="text-2xl font-black tracking-tighter">AETHER<span className="text-indigo-500">FLOW</span></h1>
-                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Productivity OS v1.0</p>
+                            <h1 className="text-2xl font-black tracking-tighter italic">AETHERFLOW <span className="text-indigo-500 text-sm">v1.0</span></h1>
+                            <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">System Architect Edition</p>
                         </div>
-                        <div className="flex items-center gap-3">
-                            <div className="text-right">
-                                <div className="text-xs font-bold text-orange-500 flex items-center gap-1">
-                                    <Icon name="flame" size={12} /> 14 DAY STREAK
-                                </div>
-                            </div>
-                            <button onClick={() => setIsDarkMode(!isDarkMode)} className="w-10 h-10 glass rounded-full flex items-center justify-center">
-                                <Icon name={isDarkMode ? "sun" : "moon"} size={18} />
-                            </button>
-                        </div>
+                        <button onClick={() => setIsDarkMode(!isDarkMode)} className="bg-white/5 p-3 rounded-2xl border border-white/10">
+                            {isDarkMode ? '🌞' : '🌙'}
+                        </button>
                     </header>
 
                     {/* Main Content Area */}
-                    <main className="flex-grow p-6 overflow-y-auto pb-32">
-                        
+                    <main className="flex-grow p-6 pb-32">
                         {activeTab === 'dashboard' && (
-                            <div className="space-y-6 animate-in fade-in duration-500">
-                                <section className="glass rounded-[32px] p-8 text-center relative overflow-hidden">
-                                    <div className="absolute top-0 right-0 p-4 opacity-10"><Icon name="clock" size={80} /></div>
-                                    <h2 className="text-xs font-bold text-indigo-400 uppercase tracking-[0.2em] mb-4">Focus Session</h2>
-                                    <div className="text-7xl font-black font-mono tracking-tighter mb-6">{formatTime(time)}</div>
+                            <div className="space-y-6">
+                                <section className="glass p-8 rounded-[40px] text-center shadow-2xl">
+                                    <p className="text-xs font-bold text-indigo-400 uppercase tracking-[0.2em] mb-4">Deep Work Clock</p>
+                                    <div className="text-7xl font-black font-mono tracking-tighter">
+                                        {String(pomodoro.mins).padStart(2, '0')}:{String(pomodoro.secs).padStart(2, '0')}
+                                    </div>
                                     <button 
-                                        onClick={() => setIsActive(!isActive)}
-                                        className={`px-10 py-4 rounded-2xl font-bold transition-all active:scale-95 ${isActive ? 'bg-red-500/20 text-red-500 border border-red-500/50' : 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/20'}`}
+                                        onClick={() => setPomodoro(p => ({ ...p, active: !p.active }))}
+                                        className={`mt-8 px-10 py-4 rounded-full font-black text-sm tracking-widest transition-all ${pomodoro.active ? 'bg-red-500 shadow-red-500/20' : 'bg-indigo-600 shadow-indigo-500/40 hover:scale-105'}`}
                                     >
-                                        {isActive ? 'PAUSE FLOW' : 'START FLOW'}
+                                        {pomodoro.active ? 'ABORT SESSION' : 'INITIATE FOCUS'}
                                     </button>
                                 </section>
 
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="glass p-5 rounded-3xl">
-                                        <Icon name="target" className="text-indigo-500 mb-2" />
-                                        <div className="text-2xl font-black">85%</div>
-                                        <div className="text-[10px] text-gray-500 uppercase font-bold">Daily Goal</div>
+                                        <p className="text-[10px] font-bold text-gray-500 uppercase">Energy Streak</p>
+                                        <p className="text-2xl font-black text-orange-500">🔥 7 Days</p>
                                     </div>
                                     <div className="glass p-5 rounded-3xl">
-                                        <Icon name="zap" className="text-yellow-500 mb-2" />
-                                        <div className="text-2xl font-black">1.2k</div>
-                                        <div className="text-[10px] text-gray-500 uppercase font-bold">Flow Points</div>
+                                        <p className="text-[10px] font-bold text-gray-500 uppercase">Referral Link</p>
+                                        <p className="text-xs font-mono text-indigo-400 truncate mt-1">{referralCode}</p>
                                     </div>
                                 </div>
                             </div>
                         )}
 
                         {activeTab === 'tasks' && (
-                            <div className="space-y-4 animate-in slide-in-from-bottom-4 duration-500">
-                                <h2 className="text-xl font-bold">Daily Tasks</h2>
+                            <div className="space-y-4">
+                                <h2 className="text-xl font-black italic">MISSION CONTROL</h2>
                                 <div className="flex gap-2">
-                                    <input id="taskInput" className="flex-grow glass rounded-2xl p-4 outline-none focus:border-indigo-500 transition-all" placeholder="Enter objective..." />
-                                    <button 
-                                        onClick={() => {
-                                            const val = document.getElementById('taskInput').value;
-                                            if(val) dispatchTasks({ type: 'ADD', payload: { text: val } });
-                                            document.getElementById('taskInput').value = '';
+                                    <input 
+                                        id="taskInput"
+                                        className="flex-grow bg-white/5 border border-white/10 p-4 rounded-2xl outline-none focus:border-indigo-500 transition-all"
+                                        placeholder="Enter high-priority task..."
+                                        onKeyDown={(e) => {
+                                            if(e.key === 'Enter' && e.target.value) {
+                                                dispatchTasks({ type: 'ADD', payload: { text: e.target.value } });
+                                                e.target.value = '';
+                                            }
                                         }}
-                                        className="bg-indigo-600 w-14 rounded-2xl flex items-center justify-center"
-                                    >
-                                        <Icon name="plus" />
-                                    </button>
+                                    />
                                 </div>
-                                <div className="space-y-2">
+                                <div className="space-y-3">
                                     {tasks.map(t => (
-                                        <div key={t.id} className="glass p-4 rounded-2xl flex items-center justify-between group">
-                                            <div className="flex items-center gap-3">
-                                                <button onClick={() => dispatchTasks({ type: 'TOGGLE', id: t.id })} className={`w-6 h-6 rounded-full border-2 transition-all ${t.completed ? 'bg-indigo-500 border-indigo-500' : 'border-gray-600'}`}>
-                                                    {t.completed && <Icon name="check" size={14} className="text-white mx-auto" />}
-                                                </button>
-                                                <span className={t.completed ? 'line-through text-gray-500' : 'font-medium'}>{t.text}</span>
+                                        <div key={t.id} className="glass p-5 rounded-3xl flex justify-between items-center group">
+                                            <div className="flex items-center gap-4">
+                                                <button 
+                                                    onClick={() => dispatchTasks({ type: 'TOGGLE', id: t.id })}
+                                                    className={`w-6 h-6 rounded-full border-2 transition-all ${t.completed ? 'bg-indigo-500 border-indigo-500' : 'border-white/20'}`}
+                                                />
+                                                <span className={`font-bold text-sm ${t.completed ? 'line-through text-gray-600' : ''}`}>{t.text}</span>
                                             </div>
-                                            <button onClick={() => dispatchTasks({ type: 'DELETE', id: t.id })} className="opacity-0 group-hover:opacity-100 text-red-500 transition-all">
-                                                <Icon name="trash-2" size={16} />
-                                            </button>
+                                            <button onClick={() => dispatchTasks({ type: 'DELETE', id: t.id })} className="text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">✕</button>
                                         </div>
                                     ))}
                                 </div>
                             </div>
                         )}
+
+                        {activeTab === 'habits' && (
+                            <div className="text-center py-20">
+                                <div className="text-4xl mb-4">💎</div>
+                                <h3 className="font-bold">Habit Architect</h3>
+                                <p className="text-xs text-gray-500 mt-2">Module initializing. Keep your streak alive.</p>
+                            </div>
+                        )}
                     </main>
 
-                    {/* Navigation */}
-                    <nav className="fixed bottom-6 left-6 right-6 max-w-[340px] mx-auto glass rounded-[24px] p-2 flex justify-between items-center shadow-2xl">
-                        <button onClick={() => setActiveTab('dashboard')} className={`p-4 rounded-xl transition-all ${activeTab === 'dashboard' ? 'bg-indigo-600/10 active-tab text-indigo-500' : 'text-gray-500'}`}>
-                            <Icon name="layout-dashboard" />
-                        </button>
-                        <button onClick={() => setActiveTab('tasks')} className={`p-4 rounded-xl transition-all ${activeTab === 'tasks' ? 'bg-indigo-600/10 active-tab text-indigo-500' : 'text-gray-500'}`}>
-                            <Icon name="check-circle" />
-                        </button>
-                        <button onClick={() => setActiveTab('habits')} className={`p-4 rounded-xl transition-all ${activeTab === 'habits' ? 'bg-indigo-600/10 active-tab text-indigo-500' : 'text-gray-500'}`}>
-                            <Icon name="repeat" />
-                        </button>
-                        <button onClick={() => setActiveTab('settings')} className={`p-4 rounded-xl transition-all ${activeTab === 'settings' ? 'bg-indigo-600/10 active-tab text-indigo-500' : 'text-gray-500'}`}>
-                            <Icon name="settings" />
-                        </button>
+                    {/* Navigation Bar */}
+                    <nav className="fixed bottom-0 left-0 right-0 max-w-lg mx-auto glass border-t-0 rounded-t-[32px] p-6 flex justify-around items-end shadow-2xl z-50">
+                        <NavItem id="dashboard" label="FLOW" icon="⚡" />
+                        <NavItem id="tasks" label="TASKS" icon="🎯" />
+                        <NavItem id="habits" label="HABITS" icon="💎" />
+                        <NavItem id="settings" label="OS" icon="⚙️" />
                     </nav>
                 </div>
             );
         };
 
         const root = createRoot(document.getElementById('root'));
-        root.render(<App />);
+        root.render(<AetherFlow />);
     </script>
 </body>
 </html>
