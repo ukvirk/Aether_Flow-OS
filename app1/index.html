@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AetherFlow OS | Full UI Replica</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <script type="importmap">
+    {
+        "imports": {
+            "react": "https://esm.sh/react@18.2.0",
+            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+            "lucide-react": "https://esm.sh/lucide-react@0.284.0"
+        }
+    }
+    </script>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel" data-type="module">
+        import React, { useState, useEffect, useReducer } from 'react';
+        import { createRoot } from 'react-dom/client';
+        import { Clock, Plus, Trash2, Check, Moon, Sun, Target, Calendar, Flame, Trophy, PlayCircle, PauseCircle, SkipForward, Award, CheckCircle2, BarChart3, Smile, Meh, Frown, Coffee, CloudRain, Wind, Volume2, Users, Copy, Sparkles, X, BookOpen, Save, Settings, CheckSquare, Heart, TrendingUp, RefreshCw, Zap, CheckCircle } from 'lucide-react';
+
+        // Task Reducer
+        const taskReducer = (state, action) => {
+          switch (action.type) {
+            case 'SET_TASKS': return action.payload;
+            case 'ADD_TASK': return [...state, action.payload];
+            case 'TOGGLE_TASK': return state.map(t => t.id === action.payload ? { ...t, completed: !t.completed } : t);
+            case 'DELETE_TASK': return state.filter(t => t.id !== action.payload);
+            default: return state;
+          }
+        };
+
+        // Habit Reducer
+        const habitReducer = (state, action) => {
+          switch (action.type) {
+            case 'SET_HABITS': return action.payload;
+            case 'ADD_HABIT': return [...state, action.payload];
+            case 'TOGGLE_HABIT': return state.map(h => h.id === action.payload ? { ...h, completedToday: !h.completedToday, totalCompletions: h.completedToday ? h.totalCompletions - 1 : h.totalCompletions + 1 } : h);
+            case 'DELETE_HABIT': return state.filter(h => h.id !== action.payload);
+            default: return state;
+          }
+        };
+
+        // FREE FOREVER BANNER
+        const FreeForeverBanner = () => (
+          <div className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-green-400 via-blue-500 to-purple-600 py-2 px-4 text-center shadow-2xl">
+            <p className="text-white font-bold text-xs md:text-sm flex items-center justify-center gap-2 animate-pulse">
+              <Sparkles className="w-4 h-4" />
+              🎉 AetherFlow is 100% Free Forever • No Limits • Full Access for All 🎉
+              <Sparkles className="w-4 h-4" />
+            </p>
+          </div>
+        );
+
+        // VIRAL CONNECT MODULE
+        const ViralConnectModule = ({ userId, isDarkMode, showNotification }) => {
+          const [referralLink, setReferralLink] = useState('');
+          const [copied, setCopied] = useState(false);
+          
+          useEffect(() => {
+            const shortId = userId.substring(0, 8);
+            setReferralLink(`https://aetherflow.app/invite/${shortId}`);
+          }, [userId]);
+
+          const copyReferralLink = async () => {
+            try {
+              await navigator.clipboard.writeText(referralLink);
+              setCopied(true);
+              showNotification('🔗 Link Copied!', 'Share with friends!');
+              setTimeout(() => setCopied(false), 2000);
+            } catch (err) {
+              showNotification('⚠️ Copy manually', referralLink);
+            }
+          };
+
+          return (
+            <div className={`rounded-xl p-6 shadow-lg border ${
+              isDarkMode ? 'bg-gradient-to-br from-purple-900/50 to-pink-900/50 border-purple-700' : 'bg-gradient-to-br from-purple-100 to-pink-100 border-purple-300'
+            }`}>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center shadow-lg">
+                  <Users className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>🚀 Invite Friends</h3>
+                  <p className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Share & grow together</p>
+                </div>
+              </div>
+              
+              <div className="space-y-3">
+                <div className={`flex gap-2 p-3 rounded-lg ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                  <input
+                    type="text"
+                    value={referralLink}
+                    readOnly
+                    className={`flex-1 bg-transparent text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} focus:outline-none`}
+                  />
+                  <button
+                    onClick={copyReferralLink}
+                    className={`px-4 py-2 rounded-lg font-semibold text-xs transition-all flex items-center gap-1 ${
+                      copied ? 'bg-green-500 text-white' : 'bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:shadow-lg'
+                    }`}
+                  >
+                    {copied ? <><CheckCircle className="w-3 h-3" /> Copied!</> : <><Copy className="w-3 h-3" /> Copy</>}
+                  </button>
+                </div>
+                <p className={`text-xs text-center ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  Share via Facebook, TikTok, WhatsApp, or any platform!
+                </p>
+              </div>
+            </div>
+          );
+        };
+
+        // HEADER
+        const Header = ({ userName, streak, points, setActiveTab, isDarkMode }) => (
+          <header className={`flex items-center justify-between p-4 shadow-lg border-b ${
+            isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+          }`}>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center shadow-md">
+                <Zap className="w-5 h-5 text-white" />
+              </div>
+              <div className="flex flex-col">
+                <h1 className="text-sm font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">AetherFlow</h1>
+                <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Personal Productivity OS</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-3">
+              <div className="flex items-center text-yellow-400 font-semibold text-xs">
+                <Trophy className="w-4 h-4 mr-1" />{points}
+              </div>
+              <div className="flex items-center text-red-400 font-semibold text-xs">
+                <Flame className="w-4 h-4 mr-1" />{streak}d
+              </div>
+              <button onClick={() => setActiveTab('settings')} className={`p-2 rounded-full transition ${
+                isDarkMode ? 'text-gray-400 hover:text-white hover:bg-gray-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+              }`}>
+                <Settings className="w-5 h-5" />
+              </button>
+            </div>
+          </header>
+        );
+
+        // MODAL
+        const Modal = ({ title, children, onClose, isDarkMode }) => (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-70 backdrop-blur-sm">
+            <div className={`rounded-xl shadow-2xl w-full max-w-md p-6 border max-h-[90vh] overflow-y-auto ${
+              isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+            }`}>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{title}</h3>
+                <button onClick={onClose} className={`p-1 rounded-full transition ${isDarkMode ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}>
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+              {children}
+            </div>
+          </div>
+        );
+
+        // TASK ITEM
+        const TaskItem = ({ task, toggleTask, deleteTask, isDarkMode }) => (
+          <div className={`flex items-center justify-between p-3 mb-2 rounded-xl transition ${
+            task.completed ? (isDarkMode ? 'bg-green-900/50 border-l-4 border-green-500' : 'bg-green-100 border-l-4 border-green-500')
+            : (isDarkMode ? 'bg-gray-700 border-l-4 border-gray-600 hover:bg-gray-600' : 'bg-gray-50 border-l-4 border-gray-300 hover:bg-gray-100')
+          }`}>
+            <div className="flex items-center w-full">
+              <button
+                onClick={() => toggleTask(task.id)}
+                className={`p-2 rounded-full mr-3 transition ${
+                  task.completed ? 'bg-green-500 text-white' : (isDarkMode ? 'bg-gray-600 text-gray-300 hover:bg-green-600' : 'bg-gray-200 text-gray-600 hover:bg-green-500 hover:text-white')
+                }`}
+              >
+                <Check className="w-4 h-4" />
+              </button>
+              <div className="flex flex-col flex-grow truncate">
+                <span className={`font-semibold text-sm ${task.completed ? (isDarkMode ? 'line-through text-gray-400' : 'line-through text-gray-500') : (isDarkMode ? 'text-white' : 'text-gray-900')}`}>
+                  {task.text}
+                </span>
+                <div className="flex items-center space-x-2 text-xs mt-1">
+                  <span className={`px-2 py-0.5 rounded-full text-white text-xs ${task.priority === 'high' ? 'bg-red-600' : task.priority === 'medium' ? 'bg-yellow-600' : 'bg-blue-600'}`}>
+                    {task.priority.toUpperCase()}
+                  </span>
+                  {task.time && <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}><Clock className="inline w-3 h-3 mr-0.5" />{task.time}</span>}
+                </div>
+              </div>
+            </div>
+            <button onClick={() => deleteTask(task.id)} className={`p-2 ml-3 rounded-full transition ${isDarkMode ? 'text-red-400 hover:text-red-300 hover:bg-gray-600' : 'text-red-500 hover:text-red-700 hover:bg-red-50'}`}>
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        );
+
+        // HABIT ITEM
+        const HabitItem = ({ habit, toggleHabit, deleteHabit, isDarkMode }) => (
+          <div className={`flex items-center justify-between p-3 mb-2 rounded-xl transition ${
+            habit.completedToday ? (isDarkMode ? 'bg-purple-900/50 border-l-4 border-purple-500' : 'bg-purple-100 border-l-4 border-purple-500')
+            : (isDarkMode ? 'bg-gray-700 border-l-4 border-gray-600 hover:bg-gray-600' : 'bg-gray-50 border-l-4 border-gray-300 hover:bg-gray-100')
+          }`}>
+            <div className="flex items-center w-full">
+              <button
+                onClick={() => toggleHabit(habit.id)}
+                className={`p-2 text-lg rounded-full mr-3 transition ${habit.completedToday ? 'bg-purple-500' : (isDarkMode ? 'bg-gray-600 hover:bg-purple-600' : 'bg-gray-200 hover:bg-purple-500')}`}
+              >
+                {habit.icon || '✨'}
+              </button>
+              <div className="flex flex-col flex-grow truncate">
+                <span className={`font-semibold text-sm ${habit.completedToday ? (isDarkMode ? 'line-through text-gray-400' : 'line-through text-gray-500') : (isDarkMode ? 'text-white' : 'text-gray-900')}`}>
+                  {habit.name}
+                </span>
+                <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Completed: {habit.totalCompletions || 0} times</div>
+              </div>
+            </div>
+            <button onClick={() => deleteHabit(habit.id)} className={`p-2 ml-3 rounded-full transition ${isDarkMode ? 'text-red-400 hover:text-red-300 hover:bg-gray-600' : 'text-red-500 hover:text-red-700 hover:bg-red-50'}`}>
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        );
+
+        // MAIN APP
+        const AetherFlowApp = () => {
+          const [userId] = useState(crypto.randomUUID());
+          const [isDarkMode, setIsDarkMode] = useState(true);
+          const [tasks, dispatchTasks] = useReducer(taskReducer, []);
+          const [habits, dispatchHabits] = useReducer(habitReducer, []);
+          const [userProfile, setUserProfile] = useState({ streak: 7, totalPoints: 245, name: 'Warrior' });
+          const [activeTab, setActiveTab] = useState('dashboard');
+          const [showFriendsModal, setShowFriendsModal] = useState(false);
+          const [newTask, setNewTask] = useState('');
+          const [newTaskTime, setNewTaskTime] = useState('');
+          const [newTaskPriority, setNewTaskPriority] = useState('medium');
+          const [selectedFramework, setSelectedFramework] = useState('gtd');
+          const [newHabitName, setNewHabitName] = useState('');
+          const [newHabitIcon, setNewHabitIcon] = useState('✨');
+          const [pomodoroMinutes, setPomodoroMinutes] = useState(25);
+          const [pomodoroSeconds, setPomodoroSeconds] = useState(0);
+          const [pomodoroActive, setPomodoroActive] = useState(false);
+          const [pomodoroType, setPomodoroType] = useState('work');
+          const [pomodoroCount, setPomodoroCount] = useState(0);
+          const [userName, setUserName] = useState('Warrior');
+
+          const focusSounds = [
+            { id: 'rain', name: 'Rain', icon: CloudRain },
+            { id: 'coffee', name: 'Café', icon: Coffee },
+            { id: 'forest', name: 'Forest', icon: Wind },
+            { id: 'white', name: 'White', icon: Volume2 },
+          ];
+
+          const quotes = [
+            { text: "The secret of getting ahead is getting started.", author: "Mark Twain" },
+            { text: "Don't watch the clock; do what it does. Keep going.", author: "Sam Levenson" },
+          ];
+
+          const [currentQuote] = useState(quotes[0]);
+          
+          const tips = [
+            "🎯 The 2-Minute Rule: If a task takes less than 2 minutes, do it immediately.",
+            "🧠 Use the Pomodoro Technique: Work for 25 minutes, then take a 5-minute break.",
+          ];
+
+          const [currentTip, setCurrentTip] = useState(0);
+          
+          const tasksCompletedToday = tasks.filter(t => t.completed).length;
+          const habitsCompletedToday = habits.filter(h => h.completedToday).length;
+
+          useEffect(() => {
+            const interval = setInterval(() => setCurrentTip(prev => (prev + 1) % tips.length), 12000);
+            return () => clearInterval(interval);
+          }, []);
+
+          useEffect(() => {
+            let interval = null;
+            if (pomodoroActive) {
+              interval = setInterval(() => {
+                if (pomodoroSeconds === 0) {
+                  if (pomodoroMinutes === 0) {
+                    setPomodoroActive(false);
+                    if (pomodoroType === 'work') {
+                      setPomodoroCount(prev => prev + 1);
+                      setUserProfile(prev => ({ ...prev, totalPoints: prev.totalPoints + 10 }));
+                      setPomodoroType('short-break');
+                      setPomodoroMinutes(5);
+                      showNotification('🎉 Session Complete!', 'Take a break!');
+                    } else {
+                      setPomodoroType('work');
+                      setPomodoroMinutes(25);
+                    }
+                  } else {
+                    setPomodoroMinutes(prev => prev - 1);
+                    setPomodoroSeconds(59);
+                  }
+                } else {
+                  setPomodoroSeconds(prev => prev - 1);
+                }
+              }, 1000);
+            }
+            return () => clearInterval(interval);
+          }, [pomodoroActive, pomodoroMinutes, pomodoroSeconds, pomodoroType]);
+
+          const showNotification = (title, body) => {
+            if ('Notification' in window && Notification.permission === 'granted') {
+              new Notification(title, { body });
+            }
+          };
+          
+          const addTask = (e) => {
+            e.preventDefault();
+            if (!newTask.trim()) return;
+            dispatchTasks({ type: 'ADD_TASK', payload: {
+              id: Date.now(),
+              text: newTask,
+              priority: newTaskPriority,
+              completed: false,
+              time: newTaskTime,
+              framework: selectedFramework
+            }});
+            setNewTask('');
+            setNewTaskTime('');
+          };
+          
+          const addHabit = (e) => {
+            e.preventDefault();
+            if (!newHabitName.trim()) return;
+            dispatchHabits({ type: 'ADD_HABIT', payload: {
+              id: Date.now(),
+              name: newHabitName,
+              icon: newHabitIcon,
+              completedToday: false,
+              totalCompletions: 0
+            }});
+            setNewHabitName('');
+            setNewHabitIcon('✨');
+          };
+          
+          const toggleTask = (id) => {
+            const task = tasks.find(t => t.id === id);
+            dispatchTasks({ type: 'TOGGLE_TASK', payload: id });
+            setUserProfile(prev => ({ ...prev, totalPoints: prev.totalPoints + (task.completed ? -5 : 5) }));
+          };
+
+          const toggleHabit = (id) => {
+            const habit = habits.find(h => h.id === id);
+            dispatchHabits({ type: 'TOGGLE_HABIT', payload: id });
+            setUserProfile(prev => ({ ...prev, totalPoints: prev.totalPoints + (habit.completedToday ? -10 : 10) }));
+          };
+
+          const toggleTheme = () => setIsDarkMode(!isDarkMode);
+          
+          const DashboardScreen = () => (
+            <div className="p-4 space-y-6">
+              <div className={`p-4 rounded-xl shadow-inner border ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-100 border-gray-200'}`}>
+                <p className={`text-sm italic ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>"{currentQuote.text}"</p>
+                <p className={`text-xs text-right ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>- {currentQuote.author}</p>
+                <div className={`mt-3 pt-3 border-t ${isDarkMode ? 'border-gray-600' : 'border-gray-300'}`}>
+                  <p className={`text-sm font-semibold flex items-center ${isDarkMode ? 'text-teal-400' : 'text-teal-600'}`}>
+                    <BookOpen className="w-4 h-4 mr-1"/> Productivity Tip:
+                  </p>
+                  <p className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>{tips[currentTip]}</p>
+                </div>
+              </div>
+              
+              <h2 className={`text-xl font-bold flex items-center ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                <BarChart3 className="w-5 h-5 mr-2 text-indigo-400"/> Daily Progress
+              </h2>
+          
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-indigo-700 p-4 rounded-xl shadow-lg flex flex-col items-center">
+                  <CheckSquare className="w-8 h-8 text-white mb-2"/>
+                  <p className="text-2xl font-bold text-white">{tasksCompletedToday}</p>
+                  <p className="text-sm text-indigo-200">Tasks Done</p>
+                </div>
+                <div className="bg-purple-700 p-4 rounded-xl shadow-lg flex flex-col items-center">
+                  <Heart className="w-8 h-8 text-white mb-2"/>
+                  <p className="text-2xl font-bold text-white">{habitsCompletedToday}/{habits.length}</p>
+                  <p className="text-sm text-purple-200">Habits</p>
+                </div>
+                <div className="bg-red-700 p-4 rounded-xl shadow-lg flex flex-col items-center">
+                  <Flame className="w-8 h-8 text-white mb-2"/>
+                  <p className="text-2xl font-bold text-white">{userProfile.streak}d</p>
+                  <p className="text-sm text-red-200">Streak</p>
+                </div>
+                <div className="bg-yellow-700 p-4 rounded-xl shadow-lg flex flex-col items-center">
+                  <Trophy className="w-8 h-8 text-white mb-2"/>
+                  <p className="text-2xl font-bold text-white">{userProfile.totalPoints}</p>
+                  <p className="text-sm text-yellow-200">Points</p>
+                </div>
+              </div>
+            </div>
+          );
+
+          const TasksScreen = () => (
+            <div className="p-4 space-y-4">
+              <h2 className={`text-2xl font-extrabold flex items-center ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                <CheckCircle2 className="w-6 h-6 mr-2 text-blue-400"/> Tasks
+              </h2>
+              <form onSubmit={addTask} className={`p-4 rounded-xl shadow-lg space-y-3 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                <input type="text" value={newTask} onChange={(e) => setNewTask(e.target.value)} placeholder="What needs to be done?" className={`w-full p-3 rounded-lg border focus:ring-blue-500 focus:border-blue-500 ${isDarkMode ? 'bg-gray-800 text-white placeholder-gray-400 border-gray-600' : 'bg-white text-gray-900 placeholder-gray-500 border-gray-300'}`} required />
+                <div className="grid grid-cols-2 gap-3">
+                  <input type="time" value={newTaskTime} onChange={(e) => setNewTaskTime(e.target.value)} className={`w-full p-3 rounded-lg border ${isDarkMode ? 'bg-gray-800 text-white border-gray-600' : 'bg-white text-gray-900 border-gray-300'}`} />
+                  <select value={newTaskPriority} onChange={(e) => setNewTaskPriority(e.target.value)} className={`w-full p-3 rounded-lg border ${isDarkMode ? 'bg-gray-800 text-white border-gray-600' : 'bg-white text-gray-900 border-gray-300'}`}>
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                  </select>
+                </div>
+                <button type="submit" className="w-full py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition flex items-center justify-center">
+                  <Plus className="w-5 h-5 mr-2"/> Add Task
+                </button>
+              </form>
+              <div className="space-y-2">
+                {tasks.length === 0 ? (
+                  <p className={`text-center p-4 rounded-xl ${isDarkMode ? 'text-gray-400 bg-gray-700' : 'text-gray-600 bg-gray-100'}`}>No tasks yet! Add your first one.</p>
+                ) : (
+                  tasks.map(task => <TaskItem key={task.id} task={task} toggleTask={toggleTask} deleteTask={(id) => dispatchTasks({ type: 'DELETE_TASK', payload: id })} isDarkMode={isDarkMode} />)
+                )}
+              </div>
+            </div>
+          );
+
+          const HabitsScreen = () => (
+            <div className="p-4 space-y-4">
+              <h2 className={`text-2xl font-extrabold flex items-center ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                <Heart className="w-6 h-6 mr-2 text-purple-400"/> Habits
+              </h2>
+              <form onSubmit={addHabit} className={`p-4 rounded-xl shadow-lg space-y-3 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                <input type="text" value={newHabitName} onChange={(e) => setNewHabitName(e.target.value)} placeholder="New habit (e.g., Read 10 min)" className={`w-full p-3 rounded-lg border focus:ring-purple-500 focus:border-purple-500 ${isDarkMode ? 'bg-gray-800 text-white placeholder-gray-400 border-gray-600' : 'bg-white text-gray-900 placeholder-gray-500 border-gray-300'}`} required />
+                <div className="flex items-center space-x-3">
+                  <input type="text" value={newHabitIcon} onChange={(e) => setNewHabitIcon(e.target.value.slice(0, 2))} maxLength="2" placeholder="Icon" className={`w-1/4 p-3 text-center text-xl rounded-lg border ${isDarkMode ? 'bg-gray-800 text-white border-gray-600' : 'bg-white text-gray-900 border-gray-300'}`} />
+                  <button type="submit" className="w-3/4 py-3 bg-purple-600 text-white font-bold rounded-xl hover:bg-purple-700 transition flex items-center justify-center">
+                    <Plus className="w-5 h-5 mr-2"/> Add Habit
+                  </button>
+                </div>
+              </form>
+              <div className="space-y-2">
+                {habits.length === 0 ? (
+                  <p className={`text-center p-4 rounded-xl ${isDarkMode ? 'text-gray-400 bg-gray-700' : 'text-gray-600 bg-gray-100'}`}>Start building habits!</p>
+                ) : (
+                  habits.map(habit => <HabitItem key={habit.id} habit={habit} toggleHabit={toggleHabit} deleteHabit={(id) => dispatchHabits({ type: 'DELETE_HABIT', payload: id })} isDarkMode={isDarkMode} />)
+                )}
+              </div>
+            </div>
+          );
+
+          const FocusScreen = () => {
+            const totalDuration = pomodoroType === 'work' ? 25 : 5;
+            const totalSeconds = totalDuration * 60;
+            const remainingSeconds = pomodoroMinutes * 60 + pomodoroSeconds;
+            const percentage = ((totalSeconds - remainingSeconds) / totalSeconds) * 100;
+
+            return (
+              <div className="p-4 space-y-6">
+                <h2 className={`text-2xl font-extrabold flex items-center ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                  <Clock className="w-6 h-6 mr-2 text-red-400"/> Focus Timer
+                </h2>
+                <div className={`p-6 rounded-xl shadow-2xl flex flex-col items-center border ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+                  <p className={`text-lg font-semibold mb-2 ${pomodoroType === 'work' ? 'text-red-400' : 'text-green-400'}`}>
+                    {pomodoroType === 'work' ? 'FOCUS TIME' : 'BREAK TIME'}
+                  </p>
+                  <div className="relative w-48 h-48 mb-6">
+                    <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
+                      <circle cx="50" cy="50" r="45" fill="none" stroke={isDarkMode ? '#374151' : '#e5e7eb'} strokeWidth="10" />
+                      <circle
+                        cx="50"
+                        cy="50"
+                        r="45"
+                        fill="none"
+                        stroke={pomodoroType === 'work' ? '#f87171' : '#34d399'}
+                        strokeWidth="10"
+                        strokeLinecap="round"
+                        strokeDasharray="314"
+                        strokeDashoffset={(314 * (100 - percentage)) / 100}
+                        className="transition-all duration-1000 ease-linear"
+                      />
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <span className={`text-5xl font-extrabold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                        {String(pomodoroMinutes).padStart(2, '0')}:{String(pomodoroSeconds).padStart(2, '0')}
+                      </span>
+                      <span className={`text-sm mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Session: {pomodoroCount + 1}</span>
+                    </div>
+                  </div>
+                  <div className="flex space-x-4">
+                    {pomodoroActive ? (
+                      <button onClick={() => setPomodoroActive(false)} className="p-4 rounded-full bg-gray-600 text-white shadow-lg hover:bg-gray-700 transition">
+                        <PauseCircle className="w-6 h-6" />
+                      </button>
+                    ) : (
+                      <button onClick={() => setPomodoroActive(true)} className="p-4 rounded-full bg-red-600 text-white shadow-lg hover:bg-red-700 transition">
+                        <PlayCircle className="w-6 h-6" />
+                      </button>
+                    )}
+                    <button onClick={() => { setPomodoroActive(false); setPomodoroMinutes(25); setPomodoroSeconds(0); setPomodoroType('work'); }} className="p-4 rounded-full bg-gray-600 text-white shadow-lg hover:bg-gray-700 transition">
+                      <RefreshCw className="w-6 h-6" />
+                    </button>
+                  </div>
+                </div>
+                <h3 className={`text-xl font-bold flex items-center pt-4 border-t ${isDarkMode ? 'text-white border-gray-700' : 'text-gray-900 border-gray-300'}`}>
+                  <Volume2 className="w-5 h-5 mr-2 text-teal-400"/> Focus Sounds
+                </h3>
+                <div className={`flex justify-around p-4 rounded-xl ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                  {focusSounds.map(sound => {
+                    const Icon = sound.icon;
+                    return (
+                      <div key={sound.id} className="relative">
+                        <button disabled className={`flex flex-col items-center p-3 rounded-xl opacity-50 cursor-not-allowed ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                          <Icon className="w-6 h-6" />
+                          <span className="text-xs mt-1">{sound.name}</span>
+                        </button>
+                        <span className="absolute -top-2 -right-2 bg-yellow-400 text-xs px-2 py-1 rounded-full text-gray-900 font-bold">Soon</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          };
+          
+          const SettingsScreen = () => (
+            <div className="p-4 space-y-6">
+              <h2 className={`text-2xl font-extrabold flex items-center ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                <Settings className="w-6 h-6 mr-2 text-gray-400"/> Settings
+              </h2>
+              
+              <div className={`rounded-xl p-4 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                <h3 className="text-lg font-bold mb-3 flex items-center gap-2">
+                  {isDarkMode ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+                  Theme
+                </h3>
+                <div className="flex items-center justify-between">
+                  <span className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>
+                    {isDarkMode ? 'Dark Mode' : 'Light Mode'}
+                  </span>
+                  <button
+                    onClick={toggleTheme}
+                    className={`relative w-14 h-8 rounded-full transition-colors ${isDarkMode ? 'bg-indigo-600' : 'bg-gray-300'}`}
+                  >
+                    <div className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow-lg transition-transform ${isDarkMode ? 'translate-x-7' : 'translate-x-1'}`} />
+                  </button>
+                </div>
+              </div>
+              
+              <div className={`rounded-xl p-4 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                <label className={`block text-sm mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Your Name</label>
+                <div className="flex space-x-2">
+                  <input
+                    type="text"
+                    value={userName}
+                    onChange={(e) => setUserName(e.target.value)}
+                    className={`flex-grow p-3 rounded-lg border ${isDarkMode ? 'bg-gray-800 text-white border-gray-600' : 'bg-white text-gray-900 border-gray-300'}`}
+                  />
+                  <button onClick={() => setUserProfile(prev => ({ ...prev, name: userName }))} className="p-3 bg-blue-600 rounded-lg text-white hover:bg-blue-700 transition">
+                    <Save className="w-5 h-5"/>
+                  </button>
+                </div>
+              </div>
+              
+              <ViralConnectModule userId={userId} isDarkMode={isDarkMode} showNotification={showNotification} />
+              
+              <div className={`rounded-xl p-4 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                <h3 className={`text-xl font-bold flex items-center border-b pb-2 mb-4 ${isDarkMode ? 'text-white border-gray-600' : 'text-gray-900 border-gray-300'}`}>
+                  <Users className="w-5 h-5 mr-2 text-teal-400"/> Social
+                </h3>
+                <button onClick={() => setShowFriendsModal(true)} className="w-full py-2 bg-teal-600 text-white font-bold rounded-xl hover:bg-teal-700 transition">
+                  View Leaderboard
+                </button>
+              </div>
+            </div>
+          );
+
+          const FriendsModal = () => {
+            const leaderboard = [
+              { rank: 1, username: 'ProductivityKing', points: 2450, streak: 89 },
+              { rank: 2, username: 'FocusQueen', points: 2180, streak: 67 },
+              { rank: 3, username: userName || 'You', points: userProfile.totalPoints, streak: userProfile.streak, isUser: true },
+              { rank: 4, username: 'TaskWarrior', points: 1520, streak: 42 },
+            ];
+
+            return (
+              <Modal title="🏆 Global Leaderboard" onClose={() => setShowFriendsModal(false)} isDarkMode={isDarkMode}>
+                <p className={`mb-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Compete globally!</p>
+                <div className={`rounded-xl overflow-hidden ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                  {leaderboard.map((user) => (
+                    <div key={user.rank} className={`flex items-center p-3 border-b last:border-b-0 ${
+                      user.isUser ? (isDarkMode ? 'bg-indigo-700/50 font-bold' : 'bg-indigo-100 font-bold') : (isDarkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-200')
+                    } ${isDarkMode ? 'border-gray-600' : 'border-gray-300'}`}>
+                      <span className="text-xl font-extrabold w-8 text-yellow-400">{user.rank}.</span>
+                      <div className="flex flex-col flex-grow ml-2">
+                        <span className={isDarkMode ? 'text-white' : 'text-gray-900'}>{user.username} {user.isUser && '(You)'}</span>
+                        <div className={`flex space-x-3 text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                          <span className="flex items-center"><Trophy className="w-3 h-3 mr-1 text-yellow-500"/> {user.points}</span>
+                          <span className="flex items-center"><Flame className="w-3 h-3 mr-1 text-red-500"/> {user.streak}d</span>
+                        </div>
+                      </div>
+                      {user.isUser && <Sparkles className="w-6 h-6 text-yellow-400"/>}
+                    </div>
+                  ))}
+                </div>
+              </Modal>
+            );
+          };
+          
+          const renderScreen = () => {
+            switch (activeTab) {
+              case 'dashboard': return <DashboardScreen />;
+              case 'tasks': return <TasksScreen />;
+              case 'habits': return <HabitsScreen />;
+              case 'focus': return <FocusScreen />;
+              case 'settings': return <SettingsScreen />;
+              default: return <DashboardScreen />;
+            }
+          };
+
+          return (
+            <div className={`min-h-screen flex flex-col mx-auto w-full font-sans ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}>
+              <FreeForeverBanner />
+              <div className="pt-10">
+                <Header userName={userName} streak={userProfile.streak} points={userProfile.totalPoints} setActiveTab={setActiveTab} isDarkMode={isDarkMode} />
+                <main className="flex-grow overflow-y-auto pb-20">
+                  {renderScreen()}
+                </main>
+                <nav className={`fixed bottom-0 left-0 right-0 mx-auto border-t shadow-2xl z-40 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+                  <div className="flex justify-around p-2">
+                    {[
+                      { id: 'dashboard', icon: Calendar, label: 'Today' },
+                      { id: 'tasks', icon: Target, label: 'Tasks' },
+                      { id: 'focus', icon: Clock, label: 'Focus' },
+                      { id: 'habits', icon: Heart, label: 'Habits' },
+                      { id: 'settings', icon: Settings, label: 'Settings' }
+                    ].map(tab => {
+                      const Icon = tab.icon;
+                      const isActive = activeTab === tab.id;
+                      return (
+                        <button
+                          key={tab.id}
+                          onClick={() => setActiveTab(tab.id)}
+                          className={`flex flex-col items-center p-2 rounded-lg transition ${
+                            isActive ? 'text-indigo-400' : (isDarkMode ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900')
+                          }`}
+                        >
+                          <Icon className="w-6 h-6" />
+                          <span className="text-xs mt-1">{tab.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </nav>
+                {showFriendsModal && <FriendsModal />}
+              </div>
+            </div>
+          );
+        };
+
+        const root = createRoot(document.getElementById('root'));
+        root.render(<AetherFlowApp />);
+    </script>
+</body>
+</html>
