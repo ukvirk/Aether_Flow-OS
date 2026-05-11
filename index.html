@@ -6,30 +6,18 @@
     <title>AetherFlow OS | Productivity Suite</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18",
-            "react-dom": "https://esm.sh/react-dom@18/client",
-            "lucide-react": "https://esm.sh/lucide-react@0.284.0"
-        }
-    }
-    </script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body class="bg-black">
     <div id="root"></div>
 
-    <script type="text/babel" data-type="module">
-        import React, { useState, useEffect, useReducer } from 'react';
-        import { createRoot } from 'react-dom';
-        import { 
-            Clock, Plus, Trash2, Check, Moon, Sun, Target, Calendar, Flame, Trophy, 
-            PlayCircle, PauseCircle, RefreshCw, Zap, Settings, Heart, BarChart3, 
-            BookOpen, Save, Users, Copy, Sparkles, X, CheckSquare, CheckCircle, CheckCircle2
-        } from 'lucide-react';
+    <script type="text/babel">
+        // Accessing React from the global window object (Bulletproof Method)
+        const { useState, useEffect, useReducer } = React;
+        const { createRoot } = ReactDOM;
 
-        // --- DATA ARCHITECTURE ---
         const taskReducer = (state, action) => {
           switch (action.type) {
             case 'ADD_TASK': return [...state, action.payload];
@@ -48,7 +36,6 @@
             const [pomodoroActive, setPomodoroActive] = useState(false);
             const [newTask, setNewTask] = useState('');
 
-            // TIMER ENGINE
             useEffect(() => {
                 let interval = null;
                 if (pomodoroActive) {
@@ -56,7 +43,6 @@
                         if (pomodoroSeconds === 0) {
                             if (pomodoroMinutes === 0) {
                                 setPomodoroActive(false);
-                                alert("Session Complete!");
                                 setPomodoroMinutes(25);
                             } else {
                                 setPomodoroMinutes(m => m - 1);
@@ -70,87 +56,70 @@
                 return () => clearInterval(interval);
             }, [pomodoroActive, pomodoroMinutes, pomodoroSeconds]);
 
+            // Manual Icon Helper (because of UMD loading)
+            const Icon = ({name, ...props}) => {
+                const LucideIcon = lucide.icons[name];
+                return LucideIcon ? <div dangerouslySetInnerHTML={{ __html: lucide.createIcons() }} /> : null;
+            };
+
             return (
-                <div className={`min-h-screen max-w-md mx-auto flex flex-col ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-black'}`}>
-                    {/* TOP BANNER */}
-                    <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-1 text-center text-[10px] font-bold">
-                        🚀 AetherFlow v1.0 | 100% FREE FOREVER
+                <div className={`min-h-screen max-w-md mx-auto flex flex-col ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-black shadow-2xl'}`}>
+                    <div className="bg-indigo-600 p-1 text-center text-[10px] font-bold text-white uppercase tracking-tighter">
+                        AetherFlow OS Engine Active
                     </div>
 
                     <header className="p-4 border-b border-gray-700 flex justify-between items-center">
-                        <div className="flex items-center gap-2">
-                            <Zap className="text-yellow-400" size={20} />
-                            <h1 className="font-black tracking-tighter text-xl">AetherFlow</h1>
-                        </div>
-                        <button onClick={() => setIsDarkMode(!isDarkMode)}>
-                            {isDarkMode ? <Sun size={20}/> : <Moon size={20}/>}
+                        <h1 className="font-black text-xl tracking-tighter italic">AETHERFLOW</h1>
+                        <button onClick={() => setIsDarkMode(!isDarkMode)} className="p-2 bg-gray-800 rounded-full">
+                            {isDarkMode ? '☀️' : '🌙'}
                         </button>
                     </header>
 
-                    <main className="flex-grow p-4 overflow-y-auto">
-                        {activeTab === 'dashboard' && (
-                            <div className="space-y-6">
-                                <div className="bg-gray-800 p-6 rounded-3xl border border-gray-700 text-center">
-                                    <h2 className="text-gray-400 text-xs uppercase tracking-widest mb-2">Focus Session</h2>
-                                    <div className="text-6xl font-black font-mono">
-                                        {String(pomodoroMinutes).padStart(2, '0')}:{String(pomodoroSeconds).padStart(2, '0')}
-                                    </div>
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="bg-indigo-900/50 p-4 rounded-2xl border border-indigo-500/30">
-                                        <Trophy className="text-yellow-500 mb-2" />
-                                        <div className="text-2xl font-bold">245</div>
-                                        <div className="text-[10px] uppercase text-indigo-300">Total Points</div>
-                                    </div>
-                                    <div className="bg-red-900/50 p-4 rounded-2xl border border-red-500/30">
-                                        <Flame className="text-orange-500 mb-2" />
-                                        <div className="text-2xl font-bold">7d</div>
-                                        <div className="text-[10px] uppercase text-red-300">Streak</div>
-                                    </div>
-                                </div>
+                    <main className="flex-grow p-6">
+                        <div className="bg-gray-800/50 p-8 rounded-[40px] border border-gray-700 text-center mb-6">
+                            <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-widest">Focus Timer</span>
+                            <div className="text-6xl font-black font-mono mt-2">
+                                {String(pomodoroMinutes).padStart(2, '0')}:{String(pomodoroSeconds).padStart(2, '0')}
                             </div>
-                        )}
+                        </div>
 
-                        {activeTab === 'tasks' && (
-                            <div className="space-y-4">
-                                <div className="flex gap-2">
-                                    <input 
-                                        className="flex-grow bg-gray-800 border border-gray-700 p-3 rounded-xl outline-none focus:border-indigo-500"
-                                        placeholder="Add a new task..."
-                                        value={newTask}
-                                        onChange={(e) => setNewTask(e.target.value)}
-                                    />
-                                    <button 
-                                        onClick={() => {
-                                            if(!newTask) return;
-                                            dispatchTasks({type: 'ADD_TASK', payload: {id: Date.now(), text: newTask, completed: false}});
-                                            setNewTask('');
-                                        }}
-                                        className="bg-indigo-600 px-4 rounded-xl"
-                                    >
-                                        <Plus />
-                                    </button>
-                                </div>
+                        <div className="space-y-4">
+                           <div className="flex gap-2">
+                                <input 
+                                    className="flex-grow bg-gray-800 border border-gray-700 p-4 rounded-2xl outline-none focus:border-indigo-500 transition-all text-white"
+                                    placeholder="Define your next win..."
+                                    value={newTask}
+                                    onChange={(e) => setNewTask(e.target.value)}
+                                />
+                                <button 
+                                    onClick={() => {
+                                        if(!newTask) return;
+                                        dispatchTasks({type: 'ADD_TASK', payload: {id: Date.now(), text: newTask, completed: false}});
+                                        setNewTask('');
+                                    }}
+                                    className="bg-indigo-600 px-6 rounded-2xl font-bold hover:bg-indigo-500 active:scale-90 transition-all"
+                                >
+                                    +
+                                </button>
+                           </div>
+                           <div className="space-y-2">
                                 {tasks.map(t => (
-                                    <div key={t.id} className="bg-gray-800 p-4 rounded-xl flex justify-between items-center animate-in slide-in-from-bottom-2">
+                                    <div key={t.id} className="bg-gray-800/30 p-4 rounded-2xl flex justify-between items-center border border-gray-800">
                                         <span className={t.completed ? 'line-through text-gray-500' : ''}>{t.text}</span>
-                                        <button onClick={() => dispatchTasks({type: 'DELETE_TASK', payload: t.id})}>
-                                            <Trash2 size={16} className="text-red-500" />
-                                        </button>
+                                        <button onClick={() => dispatchTasks({type: 'DELETE_TASK', payload: t.id})} className="text-red-500 font-bold px-2">X</button>
                                     </div>
                                 ))}
-                            </div>
-                        )}
+                           </div>
+                        </div>
                     </main>
 
-                    <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-gray-800 border-t border-gray-700 p-4 flex justify-around shadow-2xl">
-                        <button onClick={() => setActiveTab('dashboard')} className={activeTab === 'dashboard' ? 'text-indigo-400 scale-125 transition-all' : 'text-gray-500'}><Calendar /></button>
-                        <button onClick={() => setActiveTab('tasks')} className={activeTab === 'tasks' ? 'text-indigo-400 scale-125 transition-all' : 'text-gray-500'}><Target /></button>
-                        <button onClick={() => setPomodoroActive(!pomodoroActive)} className="bg-indigo-600 p-3 rounded-full -mt-10 border-4 border-gray-900 shadow-lg active:scale-90 transition-all">
-                            {pomodoroActive ? <PauseCircle /> : <PlayCircle />}
+                    <nav className="p-6 border-t border-gray-800 flex justify-center gap-4">
+                        <button 
+                            onClick={() => setPomodoroActive(!pomodoroActive)}
+                            className={`px-12 py-4 rounded-full font-black tracking-widest transition-all ${pomodoroActive ? 'bg-red-500' : 'bg-indigo-600 shadow-lg shadow-indigo-500/20 hover:scale-105'}`}
+                        >
+                            {pomodoroActive ? 'PAUSE' : 'START FLOW'}
                         </button>
-                        <button onClick={() => setActiveTab('habits')} className="text-gray-500"><Heart /></button>
-                        <button onClick={() => setActiveTab('settings')} className="text-gray-500"><Settings /></button>
                     </nav>
                 </div>
             );
